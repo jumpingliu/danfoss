@@ -1,0 +1,49 @@
+{
+  "appName": "Danfoss Climate Solutions",
+  "appDescription": "Engineering Tomorrow",
+  "companyName": "Danfoss",
+  "docURL": "https://docs.iotechsys.com/",
+  "copyright": "© ${currentYear} Danfoss",
+  "images": {
+    "menuLogo": "danfoss-logo-png-3.png",
+    "loginLogo": "danfoss-logo-png-3.png",
+    "copyright": "danfoss-logo-png-3.png",
+    "menuCopyright": "danfoss-logo-png-3.png",
+    "favicon": "danfoss-favicon.ico"
+  },
+  "theme": {
+    "colors": {
+      "primary": {
+        "main": "#cf151d",
+        "light": "#377791",
+        "contrastText": "#ffffff"
+      },
+      "background": "#eaeff1",
+      "header": {
+        "background": "#cf151d",
+        "text": "#ffffff"
+      },
+      "menu": {
+        "background": "#cf151d",
+        "text": "#ffffff",
+        "activeText": "#22272e",
+        "hoverText": "#ffffff",
+        "hoverBackground": "#617087"
+      },
+      "dashboard": {
+        "title": "grey",
+        "counts": "grey"
+      },
+      "tabs": {
+        "text": "#000000",
+        "background": "#grey",
+        "activeText": "#055576",
+        "activeBackground": "#ffffff"
+      },
+      "table": {
+        "selectedText": "#c41854",
+        "selectedBackground": "#f7e3ea"
+      }
+    }
+  }
+}

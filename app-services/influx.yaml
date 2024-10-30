@@ -1,0 +1,38 @@
+Writable:
+  LogLevel: INFO
+
+  StoreAndForward:
+    Enabled: false
+
+  Pipeline:
+    ExecutionOrder: 'InfluxDBSyncWrite'
+    Functions:
+      InfluxDBSyncWrite:
+        Parameters:
+          InfluxDBServerURL: 'http://influxdb:8086'
+          InfluxDBOrganization: my-org
+          InfluxDBBucket: my-bucket
+          InfluxDBMeasurement: readings
+          InfluxDBPrecision: us
+          AuthMode: token
+          SecretName: Influx/influxdb
+          SkipVerify: 'false'
+          PersistOnError: 'false'
+          StoreEventTags: 'false'
+          StoreReadingTags: 'false'
+          FieldKeyPattern: '{resourceName}'
+
+  InsecureSecrets:
+    influxdb:
+      SecretName: Influx/influxdb
+      SecretData:
+        # When using InfluxDBSyncWrite, token is a mandatory secret.
+        token: custom-token
+
+  Telemetry:
+    Interval: 0s # Disables reporting
+
+Service:
+  Host: "localhost"
+  Port: 50002
+  StartupMsg: app-Innflux has started
