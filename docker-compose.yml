@@ -56,13 +56,15 @@ services:
       CLIENTS_SUPPORT_NOTIFICATIONS_HOST: edgex-support-notifications
       CLIENTS_SUPPORT_SCHEDULER_HOST: edgex-support-scheduler
       CLIENTS_SYS_MGMT_HOST: edgex-sys-mgmt
-      TLS_ENABLE: "false"
-      TLS_KEY_PATH:
-      TLS_CERT_PATH:
+      TLS_ENABLE: "true"
+      TLS_KEY_PATH: /central-ui/key.pem
+      TLS_CERT_PATH: /central-ui/cert.pem
     volumes:
       - license-data:/edgecentral/licenses/:ro
       - /etc/localtime:/etc/localtime:ro
       - central-ui-data:/central-ui/data
+      - /danfoss/secret/cert.pem:/central-ui/cert.pem
+      - /danfoss/secret/key.pem:/central-ui/key.pem
 
   app-rules-engine:
     command:
@@ -1306,6 +1308,8 @@ networks:
     name: edgex_edgex-network
     driver: bridge
 volumes:
+  license-data: 
+    external: true
   influx-config:
     name: influx-config
   influx-data:
@@ -1314,8 +1318,6 @@ volumes:
     name: grafana-data
   central-ui-data:
     name: central-ui-data
-  license-data:
-    name: license-data
   consul-acl-token:
     name: edgex_consul-acl-token
   edgex-init:
