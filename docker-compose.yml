@@ -6,7 +6,6 @@ services:
     container_name: central-ui
     hostname: central-ui
     entrypoint: /edgecentral-ui
-    command: ${EDGECENTRAL_REGISTRY_CP_FLAGS:-}
     networks:
       edgex-network: null
     ports:
@@ -28,9 +27,9 @@ services:
       TLS_KEY_PATH:
       TLS_CERT_PATH:
     volumes:
+      - /danfoss/license/IOTech_iotech_Developer.lic:/edgecentral/licenses/:ro
       - /etc/localtime:/etc/localtime:ro
       - central-ui-data:/central-ui/data
-      - license-data:/edgecentral/licenses/:ro
 
   app-rules-engine:
     command:
