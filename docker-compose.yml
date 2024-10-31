@@ -2,27 +2,6 @@
 name: edgex
 services:
 
-  device-modbus:
-    image: iotechsys/device-modbus:3.1
-    container_name: device-modbus
-    hostname: device-modbus
-    entrypoint: /docker-entrypoint.sh
-    command:
-      - /device-modbus
-      - --registry
-      - -cp=keeper.http://edgex-core-keeper:59890
-    networks:
-      edgex-network: null
-    user: 2002:2001
-    read_only: true
-    restart: always
-    environment:
-      SERVICE_HOST: device-modbus
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - license-data:/edgecentral/licenses/:ro
-      - device-modbus-data:/opt/iotech/xrt/config
-  
   grafana:
     image: grafana/grafana:10.2.9
     container_name: grafana
@@ -88,80 +67,6 @@ services:
       - /danfoss/secret/cert.pem:/central-ui/cert.pem
       - /danfoss/secret/key.pem:/central-ui/key.pem
 
-  app-rules-engine:
-    command:
-      - /app-service-configurable
-      - --registry
-      - -cp=keeper.http://edgex-core-keeper:59890
-    container_name: edgex-app-rules-engine
-    depends_on:
-      core-common-config-bootstrapper:
-        condition: service_started
-        required: true
-      core-metadata:
-        condition: service_started
-        required: true
-      keeper:
-        condition: service_started
-        required: true
-      security-bootstrapper:
-        condition: service_started
-        required: true
-    entrypoint:
-      - /edgex-init/ready_to_run_wait_install.sh
-    environment:
-      EDGEX_PROFILE: rules-engine
-      EDGEX_SECURITY_SECRET_STORE: "true"
-      PROXY_SETUP_HOST: edgex-security-proxy-setup
-      SECRETSTORE_HOST: edgex-secret-store
-      SERVICE_HOST: edgex-app-rules-engine
-      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
-      STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
-      STAGEGATE_DATABASE_HOST: edgex-postgres
-      STAGEGATE_DATABASE_PORT: "5432"
-      STAGEGATE_DATABASE_READYPORT: "5432"
-      STAGEGATE_PROXYSETUP_READYPORT: "54325"
-      STAGEGATE_READY_TORUNPORT: "54329"
-      STAGEGATE_REGISTRY_HOST: edgex-core-keeper
-      STAGEGATE_REGISTRY_PORT: "59890"
-      STAGEGATE_REGISTRY_READYPORT: "54324"
-      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
-      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
-      STAGEGATE_WAITFOR_TIMEOUT: 60s
-    hostname: edgex-app-rules-engine
-    image: nexus3.edgexfoundry.org:10004/app-service-configurable:latest
-    networks:
-      edgex-network: null
-    ports:
-      - mode: ingress
-        host_ip: 127.0.0.1
-        target: 59701
-        published: "59701"
-        protocol: tcp
-    read_only: true
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    user: 2002:2001
-    volumes:
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-        bind:
-          create_host_path: true
-      - type: volume
-        source: edgex-init
-        target: /edgex-init
-        read_only: true
-        volume: {}
-      - type: bind
-        source: /tmp/edgex/secrets/app-rules-engine
-        target: /tmp/edgex/secrets/app-rules-engine
-        read_only: true
-        bind:
-          selinux: z
-          create_host_path: true
   core-command:
     command:
       - /core-command
@@ -172,13 +77,13 @@ services:
       core-common-config-bootstrapper:
         condition: service_started
         required: true
+      core-keeper:
+        condition: service_started
+        required: true
       core-metadata:
         condition: service_started
         required: true
       database:
-        condition: service_started
-        required: true
-      keeper:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -250,7 +155,7 @@ services:
       - -cp=keeper.http://edgex-core-keeper:59890
     container_name: edgex-core-common-config-bootstrapper
     depends_on:
-      keeper:
+      core-keeper:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -263,20 +168,10 @@ services:
       - /edgex-init/ready_to_run_wait_install.sh
     environment:
       ALL_SERVICES_DATABASE_HOST: edgex-postgres
-      ALL_SERVICES_DATABASE_PORT: "5432"
-      ALL_SERVICES_DATABASE_TYPE: postgres
       ALL_SERVICES_MESSAGEBUS_AUTHMODE: usernamepassword
       ALL_SERVICES_MESSAGEBUS_HOST: edgex-mqtt-broker
-      ALL_SERVICES_MESSAGEBUS_PORT: "1883"
-      ALL_SERVICES_MESSAGEBUS_PROTOCOL: tcp
       ALL_SERVICES_MESSAGEBUS_SECRETNAME: message-bus
-      ALL_SERVICES_MESSAGEBUS_TYPE: mqtt
       ALL_SERVICES_REGISTRY_HOST: edgex-core-keeper
-      ALL_SERVICES_REGISTRY_PORT: "59890"
-      ALL_SERVICES_REGISTRY_TYPE: keeper
-      ALL_SERVICES_WRITABLE_INSECURESECRETS_DB_SECRETDATA_PASSWORD: ""
-      ALL_SERVICES_WRITABLE_INSECURESECRETS_DB_SECRETDATA_USERNAME: ""
-      ALL_SERVICES_WRITABLE_INSECURESECRETS_DB_SECRETNAME: ""
       APP_SERVICES_CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
       DEVICE_SERVICES_CLIENTS_CORE_METADATA_HOST: edgex-core-metadata
       EDGEX_SECURITY_SECRET_STORE: "true"
@@ -332,10 +227,10 @@ services:
       core-common-config-bootstrapper:
         condition: service_started
         required: true
-      database:
+      core-keeper:
         condition: service_started
         required: true
-      keeper:
+      database:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -347,9 +242,6 @@ services:
     entrypoint:
       - /edgex-init/ready_to_run_wait_install.sh
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
-      DATABASE_TYPE: postgres
       EDGEX_SECURITY_SECRET_STORE: "true"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
@@ -401,6 +293,84 @@ services:
         bind:
           selinux: z
           create_host_path: true
+  core-keeper:
+    command:
+      - /core-keeper
+    container_name: edgex-core-keeper
+    depends_on:
+      database:
+        condition: service_started
+        required: true
+      security-bootstrapper:
+        condition: service_started
+        required: true
+      security-secretstore-setup:
+        condition: service_started
+        required: true
+    environment:
+      DATABASE_HOST: edgex-postgres
+      DATABASE_PORT: "5432"
+      DATABASE_TYPE: postgres
+      EDGEX_SECURITY_SECRET_STORE: "true"
+      MESSAGEBUS_AUTHMODE: usernamepassword
+      MESSAGEBUS_HOST: edgex-mqtt-broker
+      MESSAGEBUS_PORT: "1883"
+      MESSAGEBUS_PROTOCOL: tcp
+      MESSAGEBUS_SECRETNAME: message-bus
+      MESSAGEBUS_TYPE: mqtt
+      PROXY_SETUP_HOST: edgex-security-proxy-setup
+      SECRETSTORE_HOST: edgex-secret-store
+      SERVICE_HOST: edgex-core-keeper
+      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
+      STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
+      STAGEGATE_DATABASE_HOST: edgex-postgres
+      STAGEGATE_DATABASE_PORT: "5432"
+      STAGEGATE_DATABASE_READYPORT: "5432"
+      STAGEGATE_PROXYSETUP_READYPORT: "54325"
+      STAGEGATE_READY_TORUNPORT: "54329"
+      STAGEGATE_REGISTRY_HOST: edgex-core-keeper
+      STAGEGATE_REGISTRY_PORT: "59890"
+      STAGEGATE_REGISTRY_READYPORT: "54324"
+      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
+      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
+      STAGEGATE_WAITFOR_TIMEOUT: 60s
+      WRITABLE_INSECURESECRETS_DB_SECRETDATA_PASSWORD: postgres
+      WRITABLE_INSECURESECRETS_DB_SECRETDATA_USERNAME: postgres
+      WRITABLE_INSECURESECRETS_DB_SECRETNAME: postgres
+    hostname: edgex-core-keeper
+    image: nexus3.edgexfoundry.org:10004/core-keeper:latest
+    networks:
+      edgex-network: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 59890
+        published: "59890"
+        protocol: tcp
+    read_only: true
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        bind:
+          create_host_path: true
+      - type: volume
+        source: edgex-init
+        target: /edgex-init
+        read_only: true
+        volume: {}
+      - type: bind
+        source: /tmp/edgex/secrets/core-keeper
+        target: /tmp/edgex/secrets/core-keeper
+        read_only: true
+        bind:
+          selinux: z
+          create_host_path: true
   core-metadata:
     command:
       - /core-metadata
@@ -408,10 +378,10 @@ services:
       - -cp=keeper.http://edgex-core-keeper:59890
     container_name: edgex-core-metadata
     depends_on:
-      database:
+      core-keeper:
         condition: service_started
         required: true
-      keeper:
+      database:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -423,9 +393,6 @@ services:
     entrypoint:
       - /edgex-init/ready_to_run_wait_install.sh
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
-      DATABASE_TYPE: postgres
       EDGEX_SECURITY_SECRET_STORE: "true"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
@@ -543,34 +510,35 @@ services:
         bind:
           selinux: z
           create_host_path: true
-  keeper:
+  device-modbus:
     command:
-      - /core-keeper
-    container_name: edgex-core-keeper
+      - /device-modbus
+      - --registry
+      - -cp=keeper.http://edgex-core-keeper:59890
+    container_name: edgex-device-modbus
     depends_on:
-      database:
+      core-common-config-bootstrapper:
+        condition: service_started
+        required: true
+      core-data:
+        condition: service_started
+        required: true
+      core-keeper:
+        condition: service_started
+        required: true
+      core-metadata:
         condition: service_started
         required: true
       security-bootstrapper:
         condition: service_started
         required: true
-      security-secretstore-setup:
-        condition: service_started
-        required: true
+    entrypoint:
+      - /edgex-init/ready_to_run_wait_install.sh
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
-      DATABASE_TYPE: postgres
       EDGEX_SECURITY_SECRET_STORE: "true"
-      MESSAGEBUS_AUTHMODE: usernamepassword
-      MESSAGEBUS_HOST: edgex-mqtt-broker
-      MESSAGEBUS_PORT: "1883"
-      MESSAGEBUS_PROTOCOL: tcp
-      MESSAGEBUS_SECRETNAME: message-bus
-      MESSAGEBUS_TYPE: mqtt
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
-      SERVICE_HOST: edgex-core-keeper
+      SERVICE_HOST: edgex-device-modbus
       STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
       STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
       STAGEGATE_DATABASE_HOST: edgex-postgres
@@ -584,18 +552,15 @@ services:
       STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
       STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
       STAGEGATE_WAITFOR_TIMEOUT: 60s
-      WRITABLE_INSECURESECRETS_DB_SECRETDATA_PASSWORD: ""
-      WRITABLE_INSECURESECRETS_DB_SECRETDATA_USERNAME: ""
-      WRITABLE_INSECURESECRETS_DB_SECRETNAME: ""
-    hostname: edgex-core-keeper
-    image: nexus3.edgexfoundry.org:10004/core-keeper:latest
+    hostname: edgex-device-modbus
+    image: nexus3.edgexfoundry.org:10004/device-modbus:latest
     networks:
       edgex-network: null
     ports:
       - mode: ingress
         host_ip: 127.0.0.1
-        target: 59890
-        published: "59890"
+        target: 59901
+        published: "59901"
         protocol: tcp
     read_only: true
     restart: always
@@ -615,8 +580,8 @@ services:
         read_only: true
         volume: {}
       - type: bind
-        source: /tmp/edgex/secrets/core-keeper
-        target: /tmp/edgex/secrets/core-keeper
+        source: /tmp/edgex/secrets/device-modbus
+        target: /tmp/edgex/secrets/device-modbus
         read_only: true
         bind:
           selinux: z
@@ -625,37 +590,8 @@ services:
     command:
       - /usr/sbin/mosquitto
       - -c
-      - /mosquitto/config/mosquitto.conf
+      - /mosquitto-no-auth.conf
     container_name: edgex-mqtt-broker
-    depends_on:
-      security-bootstrapper:
-        condition: service_started
-        required: true
-      security-secretstore-setup:
-        condition: service_started
-        required: true
-    entrypoint:
-      - /edgex-init/messagebus_wait_install.sh
-    environment:
-      BROKER_TYPE: mosquitto
-      CONF_DIR: /edgex-init/bootstrap-mosquitto/res
-      EDGEX_SECURITY_SECRET_STORE: "true"
-      ENTRYPOINT: /docker-entrypoint.sh /usr/sbin/mosquitto  -c  /mosquitto/config/mosquitto.conf
-      PROXY_SETUP_HOST: edgex-security-proxy-setup
-      SECRETSTORE_HOST: edgex-secret-store
-      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
-      STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
-      STAGEGATE_DATABASE_HOST: edgex-postgres
-      STAGEGATE_DATABASE_PORT: "5432"
-      STAGEGATE_DATABASE_READYPORT: "5432"
-      STAGEGATE_PROXYSETUP_READYPORT: "54325"
-      STAGEGATE_READY_TORUNPORT: "54329"
-      STAGEGATE_REGISTRY_HOST: edgex-core-keeper
-      STAGEGATE_REGISTRY_PORT: "59890"
-      STAGEGATE_REGISTRY_READYPORT: "54324"
-      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
-      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
-      STAGEGATE_WAITFOR_TIMEOUT: 60s
     hostname: edgex-mqtt-broker
     image: eclipse-mosquitto:2.0
     networks:
@@ -670,24 +606,7 @@ services:
     restart: always
     security_opt:
       - no-new-privileges:true
-    user: root:root
-    volumes:
-      - type: volume
-        source: mqtt
-        target: /mosquitto
-        volume: {}
-      - type: volume
-        source: edgex-init
-        target: /edgex-init
-        read_only: true
-        volume: {}
-      - type: bind
-        source: /tmp/edgex/secrets/security-bootstrapper-messagebus
-        target: /tmp/edgex/secrets/security-bootstrapper-messagebus
-        read_only: true
-        bind:
-          selinux: z
-          create_host_path: true
+    user: 2002:2001
   nginx:
     command:
       - /docker-entrypoint.sh
@@ -749,105 +668,7 @@ services:
         source: nginx-tls
         target: /etc/ssl/nginx
         volume: {}
-  rules-engine:
-    container_name: edgex-kuiper
-    depends_on:
-      database:
-        condition: service_started
-        required: true
-      mqtt-broker:
-        condition: service_started
-        required: true
-      security-bootstrapper:
-        condition: service_started
-        required: true
-      security-secretstore-setup:
-        condition: service_started
-        required: true
-    entrypoint:
-      - /edgex-init/kuiper_wait_install.sh
-    environment:
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__CLIENTID: kuiper-rules-engine
-      CONNECTION__EDGEX__MQTTMSGBUS__OPTIONAL__KEEPALIVE: "500"
-      CONNECTION__EDGEX__MQTTMSGBUS__PORT: "1883"
-      CONNECTION__EDGEX__MQTTMSGBUS__PROTOCOL: tcp
-      CONNECTION__EDGEX__MQTTMSGBUS__SERVER: edgex-mqtt-broker
-      CONNECTION__EDGEX__MQTTMSGBUS__TYPE: mqtt
-      EDGEX__DEFAULT__OPTIONAL__CLIENTID: kuiper-rules-engine
-      EDGEX__DEFAULT__OPTIONAL__KEEPALIVE: "500"
-      EDGEX__DEFAULT__PORT: "1883"
-      EDGEX__DEFAULT__PROTOCOL: tcp
-      EDGEX__DEFAULT__SERVER: edgex-mqtt-broker
-      EDGEX__DEFAULT__TOPIC: edgex/rules-events
-      EDGEX__DEFAULT__TYPE: mqtt
-      KUIPER__BASIC__CONSOLELOG: "true"
-      KUIPER__BASIC__ENABLEOPENZITI: "false"
-      KUIPER__BASIC__RESTPORT: "59720"
-      PROXY_SETUP_HOST: edgex-security-proxy-setup
-      STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
-      STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
-      STAGEGATE_DATABASE_HOST: edgex-postgres
-      STAGEGATE_DATABASE_PORT: "5432"
-      STAGEGATE_DATABASE_READYPORT: "5432"
-      STAGEGATE_PROXYSETUP_READYPORT: "54325"
-      STAGEGATE_READY_TORUNPORT: "54329"
-      STAGEGATE_REGISTRY_HOST: edgex-core-keeper
-      STAGEGATE_REGISTRY_PORT: "59890"
-      STAGEGATE_REGISTRY_READYPORT: "54324"
-      STAGEGATE_SECRETSTORESETUP_HOST: edgex-security-secretstore-setup
-      STAGEGATE_SECRETSTORESETUP_TOKENS_READYPORT: "54322"
-      STAGEGATE_WAITFOR_TIMEOUT: 60s
-    hostname: edgex-kuiper
-    image: lfedge/ekuiper:v1.14.0-alpha.2
-    networks:
-      edgex-network: null
-    ports:
-      - mode: ingress
-        host_ip: 127.0.0.1
-        target: 59720
-        published: "59720"
-        protocol: tcp
-    read_only: true
-    restart: always
-    security_opt:
-      - no-new-privileges:true
-    user: kuiper:kuiper
-    volumes:
-      - type: bind
-        source: /etc/localtime
-        target: /etc/localtime
-        read_only: true
-        bind:
-          create_host_path: true
-      - type: volume
-        source: kuiper-data
-        target: /kuiper/data
-        volume: {}
-      - type: volume
-        source: kuiper-etc
-        target: /kuiper/etc
-        volume: {}
-      - type: volume
-        source: kuiper-log
-        target: /kuiper/log
-        volume: {}
-      - type: volume
-        source: kuiper-plugins
-        target: /kuiper/plugins
-        volume: {}
-      - type: volume
-        source: kuiper-sources
-        target: /kuiper/etc/sources
-        volume: {}
-      - type: volume
-        source: kuiper-connections
-        target: /kuiper/etc/connections
-        volume: {}
-      - type: volume
-        source: edgex-init
-        target: /edgex-init
-        read_only: true
-        volume: {}
+
   secret-store:
     command:
       - server
@@ -859,7 +680,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: "2108845719552"
+          memory: "2108841525248"
     entrypoint:
       - /edgex-init/secretstore_wait_install.sh
     environment:
@@ -883,7 +704,7 @@ services:
       STAGEGATE_WAITFOR_TIMEOUT: 60s
     hostname: edgex-secret-store
     image: openbao/openbao:2.0
-    memswap_limit: "2108845719552"
+    memswap_limit: "2108841525248"
     networks:
       edgex-network: null
     ports:
@@ -913,13 +734,9 @@ services:
   security-bootstrapper:
     container_name: edgex-security-bootstrapper
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
       EDGEX_GROUP: "2001"
       EDGEX_USER: "2002"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
-      REGISTRY_HOST: edgex-core-keeper
-      REGISTRY_PORT: "59890"
       STAGEGATE_BOOTSTRAPPER_HOST: edgex-security-bootstrapper
       STAGEGATE_BOOTSTRAPPER_STARTPORT: "54321"
       STAGEGATE_DATABASE_HOST: edgex-postgres
@@ -1033,6 +850,7 @@ services:
     entrypoint:
       - /edgex-init/proxy_setup_wait_install.sh
     environment:
+      EDGEX_ADD_PROXY_ROUTE: device-modbus.http://edgex-device-modbus:59901
       EDGEX_SECURITY_SECRET_STORE: "true"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
@@ -1089,11 +907,6 @@ services:
         bind:
           selinux: z
           create_host_path: true
-      - type: volume
-        source: consul-acl-token
-        target: /tmp/edgex/secrets/consul-acl-token
-        read_only: true
-        volume: {}
   security-secretstore-setup:
     container_name: edgex-security-secretstore-setup
     depends_on:
@@ -1104,9 +917,8 @@ services:
         condition: service_started
         required: true
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
-      DATABASE_TYPE: postgres
+      EDGEX_ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-modbus],message-bus[device-modbus]
+      EDGEX_ADD_SECRETSTORE_TOKENS: device-modbus
       EDGEX_GROUP: "2001"
       EDGEX_SECURITY_SECRET_STORE: "true"
       EDGEX_USER: "2002"
@@ -1139,14 +951,6 @@ services:
       - /openbao
     user: root:root
     volumes:
-      - type: volume
-        source: kuiper-sources
-        target: /tmp/kuiper
-        volume: {}
-      - type: volume
-        source: kuiper-connections
-        target: /tmp/kuiper-connections
-        volume: {}
       - type: bind
         source: /etc/localtime
         target: /etc/localtime
@@ -1168,6 +972,14 @@ services:
         bind:
           selinux: z
           create_host_path: true
+      - type: volume
+        source: kuiper-sources
+        target: /tmp/kuiper
+        volume: {}
+      - type: volume
+        source: kuiper-connections
+        target: /tmp/kuiper-connections
+        volume: {}
   support-cron-scheduler:
     command:
       - /support-cron-scheduler
@@ -1178,10 +990,10 @@ services:
       core-common-config-bootstrapper:
         condition: service_started
         required: true
-      database:
+      core-keeper:
         condition: service_started
         required: true
-      keeper:
+      database:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -1193,7 +1005,6 @@ services:
     entrypoint:
       - /edgex-init/ready_to_run_wait_install.sh
     environment:
-      DATABASE_HOST: edgex-postgres
       EDGEX_SECURITY_SECRET_STORE: "true"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
@@ -1255,10 +1066,10 @@ services:
       core-common-config-bootstrapper:
         condition: service_started
         required: true
-      database:
+      core-keeper:
         condition: service_started
         required: true
-      keeper:
+      database:
         condition: service_started
         required: true
       security-bootstrapper:
@@ -1270,9 +1081,6 @@ services:
     entrypoint:
       - /edgex-init/ready_to_run_wait_install.sh
     environment:
-      DATABASE_HOST: edgex-postgres
-      DATABASE_PORT: "5432"
-      DATABASE_TYPE: postgres
       EDGEX_SECURITY_SECRET_STORE: "true"
       PROXY_SETUP_HOST: edgex-security-proxy-setup
       SECRETSTORE_HOST: edgex-secret-store
@@ -1329,10 +1137,7 @@ networks:
   edgex-network:
     name: edgex_edgex-network
     driver: bridge
-
 volumes:
-  device-modbus-data:
-    name: device-modbus-data
   license-data: 
     external: true
   influx-config:
@@ -1342,25 +1147,9 @@ volumes:
   grafana-data:
     name: grafana-data
   central-ui-data:
-    name: central-ui-data
-  consul-acl-token:
-    name: edgex_consul-acl-token
+    name: central-ui-data  
   edgex-init:
     name: edgex_edgex-init
-  kuiper-connections:
-    name: edgex_kuiper-connections
-  kuiper-data:
-    name: edgex_kuiper-data
-  kuiper-etc:
-    name: edgex_kuiper-etc
-  kuiper-log:
-    name: edgex_kuiper-log
-  kuiper-plugins:
-    name: edgex_kuiper-plugins
-  kuiper-sources:
-    name: edgex_kuiper-sources
-  mqtt:
-    name: edgex_mqtt
   nginx-templates:
     name: edgex_nginx-templates
   nginx-tls:
