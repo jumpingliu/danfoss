@@ -1,4 +1,5 @@
 #!/bin/sh
+
 echo "Get the bao_token"
 bao_token=$(sudo cat /tmp/edgex/secrets/core-metadata/secrets-token.json | jq -r '.auth.client_token')
 
@@ -11,14 +12,9 @@ fi
 echo "Get the id_token"
 id_token=$(curl -ks -H "Authorization: Bearer ${bao_token}" "http://localhost:8200/v1/identity/oidc/token/core-metadata" | jq -r '.data.token')
 
-# Verify id_token was retrieved
-if [ -z "$id_token" ]; then
-  echo "Error: Failed to retrieve id_token"
-  exit 1
-fi
+echo "ID Token: ${id_token}"
 
-
-execute_command_until_success(){
+execute_command_until_success() {
   max_attempts="$1"
   shift
   expect_resp="$1"
@@ -26,32 +22,30 @@ execute_command_until_success(){
   cmd="$@"
   attempts=0
   cmd_status=1
-  cmd_resp=""
-  until [ $cmd_status -eq 0 ] && [ "$cmd_resp" = "$expect_resp" ]
+  
+  until [ $cmd_status -eq 0 ] 
   do 
-
-    if [ ${attempts} -eq ${max_attempts} ];then
-      echo "max attempts reached"
+    if [ ${attempts} -eq ${max_attempts} ]; then
+      echo "Max attempts reached"
       exit 1
     elif [ ${attempts} -ne 0 ]; then
       sleep 5s
     fi
 
-    cmd_resp=$($cmd)
+    # Execute the command and capture the HTTP status code
+    cmd_resp=$(curl -H "Authorization: Bearer ${id_token}" -s -o /dev/null -w "%{http_code}" $cmd)
     cmd_status=$?
-    attempts=$(($attempts+1)) 
+    attempts=$(($attempts + 1)) 
 	
-	echo "   cmd_status: $cmd_status, cmd_resp: $cmd_resp, attempts: $attempts"  
+    echo "   cmd_status: $cmd_status, cmd_resp: $cmd_resp, attempts: $attempts"  
 
+    # Check if response is the expected HTTP status code
+    if [ "$cmd_resp" = "$expect_resp" ]; then
+      echo "   execute command successfully"
+      return
+    fi
   done
-  echo "   execute command successfully"
 }
-
-echo "Launching Edge Central with the required microservices..."
-docker compose up -d
-
-echo "Checking the Metadata Service is running, max retries=10..."
-execute_command_until_success 10 200 curl -H "Authorization: Bearer ${id_token}" -s -o /dev/null -w "%{http_code}" http://localhost:59881/api/v3/ping
 
 echo "Checking the Metadata Service is running, max retries=10..."
 execute_command_until_success 10 200 curl -H "Authorization: Bearer ${id_token}" -s -o /dev/null -w "%{http_code}" http://localhost:59881/api/v3/ping
