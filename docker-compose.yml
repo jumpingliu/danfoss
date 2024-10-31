@@ -3,26 +3,26 @@ name: edgex
 services:
 
   device-modbus:
-  image: iotechsys/device-modbus:3.1
-  container_name: device-modbus
-  hostname: device-modbus
-  entrypoint: /docker-entrypoint.sh
-  command:
-    - /device-modbus
-    - --registry
-    - -cp=keeper.http://edgex-core-keeper:59890
-  networks:
-    edgex-network: null
-  user: 2002:2001
-  read_only: true
-  restart: always
-  environment:
-    SERVICE_HOST: device-modbus
-  volumes:
-    - /etc/localtime:/etc/localtime:ro
-    - license-data:/edgecentral/licenses/:ro
-    - device-modbus-data:/opt/iotech/xrt/config
-
+    image: iotechsys/device-modbus:3.1
+    container_name: device-modbus
+    hostname: device-modbus
+    entrypoint: /docker-entrypoint.sh
+    command:
+      - /device-modbus
+      - --registry
+      - -cp=keeper.http://edgex-core-keeper:59890
+    networks:
+      edgex-network: null
+    user: 2002:2001
+    read_only: true
+    restart: always
+    environment:
+      SERVICE_HOST: device-modbus
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - license-data:/edgecentral/licenses/:ro
+      - device-modbus-data:/opt/iotech/xrt/config
+  
   grafana:
     image: grafana/grafana:10.2.9
     container_name: grafana
@@ -84,6 +84,7 @@ services:
       - license-data:/edgecentral/licenses/:ro
       - /etc/localtime:/etc/localtime:ro
       - central-ui-data:/central-ui/data
+      - ${PWD}/branding:/res/branding      
       - /danfoss/secret/cert.pem:/central-ui/cert.pem
       - /danfoss/secret/key.pem:/central-ui/key.pem
 
@@ -1328,6 +1329,7 @@ networks:
   edgex-network:
     name: edgex_edgex-network
     driver: bridge
+
 volumes:
   device-modbus-data:
     name: device-modbus-data

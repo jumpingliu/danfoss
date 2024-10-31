@@ -29,7 +29,7 @@ execute_command_until_success(){
 }
 
 echo "Launching EdgeX"
-execute_command_until_success 10 200 docker compose up -d
+docker compose up -d
 
 echo "Checking the Metadata Service is running, max retries=10..."
 execute_command_until_success 10 200 curl -s -o /dev/null -w "%{http_code}" http://localhost:59881/api/v3/ping
