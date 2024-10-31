@@ -1,36 +1,36 @@
 name: edgex
 services:
-  grafana:
-    image: grafana/grafana:10.2.9
-    container_name: grafana
-    networks:
-      edgex-network: null
-    ports:
-      - "3000:3000"
-    restart: always
-    volumes:
-      # use host timezone
-      - /etc/localtime:/etc/localtime:ro
-      - grafana-data:/var/lib/grafana
+  # grafana:
+  #   image: grafana/grafana:10.2.9
+  #   container_name: grafana
+  #   networks:
+  #     edgex-network: null
+  #   ports:
+  #     - "3000:3000"
+  #   restart: always
+  #   volumes:
+  #     # use host timezone
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - grafana-data:/var/lib/grafana
 
-  influxdb:
-    image: influxdb:2.7.10-alpine
-    container_name: influxdb
-    hostname: influxdb
-    networks:
-      edgex-network: null
-    restart: always
-    user: influxdb:influxdb
-    environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: admin
-      DOCKER_INFLUXDB_INIT_PASSWORD: admin-password
-      DOCKER_INFLUXDB_INIT_ORG: my-org
-      DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: custom-token
-    volumes:
-      - influx-data:/var/lib/influxdb2
-      - influx-config:/etc/influxdb2 
+  # influxdb:
+  #   image: influxdb:2.7.10-alpine
+  #   container_name: influxdb
+  #   hostname: influxdb
+  #   networks:
+  #     edgex-network: null
+  #   restart: always
+  #   user: influxdb:influxdb
+  #   environment:
+  #     DOCKER_INFLUXDB_INIT_MODE: setup
+  #     DOCKER_INFLUXDB_INIT_USERNAME: admin
+  #     DOCKER_INFLUXDB_INIT_PASSWORD: admin-password
+  #     DOCKER_INFLUXDB_INIT_ORG: my-org
+  #     DOCKER_INFLUXDB_INIT_BUCKET: my-bucket
+  #     DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: custom-token
+  #   volumes:
+  #     - influx-data:/var/lib/influxdb2
+  #     - influx-config:/etc/influxdb2 
   core-command:
     command:
       - /core-command
@@ -1164,9 +1164,9 @@ volumes:
     name: device-modbus-data
   central-ui-data:
     name: central-ui-data
-  influx-config:
-    name: influx-config
-  influx-data:
-    name: influx-data 
-  grafana-data:
-    name: grafana-data
+  # influx-config:
+  #   name: influx-config
+  # influx-data:
+  #   name: influx-data 
+  # grafana-data:
+  #   name: grafana-data
