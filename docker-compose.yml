@@ -917,7 +917,7 @@ services:
         condition: service_started
         required: true
     environment:
-      EDGEX_ADD_KNOWN_SECRETS: redisdb[app-rules-engine],redisdb[device-modbus],message-bus[device-modbus]
+      EDGEX_ADD_KNOWN_SECRETS: postgres[device-modbus],message-bus[device-modbus]
       EDGEX_ADD_SECRETSTORE_TOKENS: device-modbus
       EDGEX_GROUP: "2001"
       EDGEX_SECURITY_SECRET_STORE: "true"
@@ -972,14 +972,7 @@ services:
         bind:
           selinux: z
           create_host_path: true
-      - type: volume
-        source: kuiper-sources
-        target: /tmp/kuiper
-        volume: {}
-      - type: volume
-        source: kuiper-connections
-        target: /tmp/kuiper-connections
-        volume: {}
+
   support-cron-scheduler:
     command:
       - /support-cron-scheduler
